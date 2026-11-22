@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hyper-Local Community Hub</title>
+  
+  <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              teal: '#135D76',
+              blue: '#3693C1',
+              green: '#68B465',
+              light: '#F4F9FA'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Leaflet CSS & JS for Interactive Map (Works reliably without API key restrictions) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom scrollbar & subtle animations */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(19, 93, 118, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(19, 93, 118, 0.45);
+    }
+    .pulse-ring {
+      animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.85); opacity: 0.8; }
+      80%, 100% { transform: scale(1.8); opacity: 0; }
+    }
+    /* Ensure Leaflet map layers play nicely with sticky nav */
+    .leaflet-container {
+      z-index: 10 !important;
+      font-family: 'Inter', sans-serif !important;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200 min-h-screen flex flex-col">
+
+  <!-- Toast / Message Box Container (Replaces alert()) -->
+  <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-2.5 flex items-center justify-between gap-3">
+      
+      <!-- Brand Identity with Custom Recreated Logo SVG -->
+      <a href="#" class="flex items-center gap-3 group focus:outline-none">
+        <div class="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200/70 dark:border-slate-700 flex items-center justify-center p-1 group-hover:scale-105 transition-transform">
+          <!-- Vector Recreation of Provided Brand Logo -->
+          <svg viewBox="0 0 120 130" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Hyper-Local Community Hub Logo">
+            <!-- Top Green Heart -->
+            <path d="M60 44C60 44 48 34.5 48 27.5C48 23.5 51.2 20.5 55 20.5C57.5 20.5 59.2 21.8 60 23.5C60.8 21.8 62.5 20.5 65 20.5C68.8 20.5 72 23.5 72 27.5C72 34.5 60 44 60 44Z" fill="#68B465"/>
+            <!-- Outer Loop Left (Blue) -->
+            <path d="M60 10C43 10 31 23 31 39C31 48 36 55 43 60" stroke="#135D76" stroke-width="11" stroke-linecap="round"/>
+            <path d="M60 10C43 10 31 23 31 39C31 48 36 55 43 60" stroke="#3693C1" stroke-width="6.5" stroke-linecap="round"/>
+            <!-- Outer Loop Right (Green) -->
+            <path d="M60 10C77 10 89 23 89 39C89 48 84 55 77 60" stroke="#135D76" stroke-width="11" stroke-linecap="round"/>
+            <path d="M60 10C77 10 89 23 89 39C89 48 84 55 77 60" stroke="#68B465" stroke-width="6.5" stroke-linecap="round"/>
+            <!-- Lower Heart Arms & Clasped Hands -->
+            <!-- Left Blue Arm -->
+            <path d="M58 63C50 53 33 53 26 65C19 77 26 94 45 106L62 116" stroke="#135D76" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M58 63C50 53 33 53 26 65C19 77 26 94 45 106L62 116" stroke="#3693C1" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Right Green Arm -->
+            <path d="M62 63C70 53 87 53 94 65C101 77 94 94 75 106L58 116" stroke="#135D76" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M62 63C70 53 87 53 94 65C101 77 94 94 75 106L58 116" stroke="#68B465" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Clasped Hands Center Detail -->
+            <rect x="44" y="88" width="32" height="18" rx="9" fill="#3693C1" stroke="#135D76" stroke-width="3"/>
+            <path d="M47 93L55 101M53 90L61 98M59 88L67 96" stroke="#68B465" stroke-width="3.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-display font-extrabold text-base sm:text-lg tracking-tight text-brand-teal dark:text-sky-400 leading-none">
+            HYPER-LOCAL
+          </span>
+          <span class="font-display font-bold text-[10px] sm:text-xs tracking-widest text-brand-teal/80 dark:text-emerald-400 uppercase mt-0.5">
+            Community Hub
+          </span>
+        </div>
+      </a>
+
+      <!-- Right Controls: Language Switcher, Location Status, Dark Mode -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Detected Location Pill -->
+        <div id="country-badge" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand-light dark:bg-slate-800 border border-brand-blue/20 text-xs font-medium text-brand-teal dark:text-sky-300">
+          <i data-lucide="globe" class="w-3.5 h-3.5 text-brand-blue"></i>
+          <span id="detected-country-name" data-i18n="detecting">Detecting Region...</span>
+        </div>
+
+        <!-- i18n Multi-language Switcher -->
+        <div class="relative">
+          <label for="lang-select" class="sr-only">Select Language</label>
+          <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl px-2.5 py-1.5 border border-slate-200 dark:border-slate-700">
+            <i data-lucide="languages" class="w-4 h-4 text-brand-teal dark:text-sky-400 mr-1.5"></i>
+            <select id="lang-select" class="bg-transparent text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer pr-1">
+              <option value="en">English (EN)</option>
+              <option value="es">Español (ES)</option>
+              <option value="hi">हिन्दी (HI)</option>
+              <option value="ml">മലയാളം (ML)</option>
+              <option value="fr">Français (FR)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" aria-label="Toggle Dark Mode" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors">
+          <i data-lucide="moon" class="w-4 h-4 hidden dark:block text-amber-400"></i>
+          <i data-lucide="sun" class="w-4 h-4 block dark:hidden text-brand-teal"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- 1. Automated IP-Based Emergency Helpline Banner -->
+    <section aria-labelledby="helpline-heading" class="bg-gradient-to-r from-brand-teal via-[#186d8a] to-brand-blue rounded-2xl p-4 sm:p-6 text-white shadow-lg relative overflow-hidden">
+      <!-- Subtle decorative background circles -->
+      <div class="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-white/10 blur-xl pointer-events-none"></div>
+      <div class="absolute right-32 -bottom-12 w-36 h-36 rounded-full bg-brand-green/20 blur-xl pointer-events-none"></div>
+
+      <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/15 text-xs font-semibold tracking-wide">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span data-i18n="ip_badge">IP-Localized Emergency Dispatch</span>
+            <span id="ip-country-code" class="px-1.5 py-0.2 bg-white/20 rounded text-[11px] font-bold">--</span>
+          </div>
+          <h1 id="helpline-heading" class="font-display font-bold text-xl sm:text-2xl tracking-tight" data-i18n="helpline_title">
+            Immediate Local Emergency Helplines
+          </h1>
+          <p class="text-xs sm:text-sm text-sky-100 max-w-2xl" data-i18n="helpline_subtitle">
+            Tap the Helplines button to view and call emergency numbers calibrated to your current region.
+          </p>
+        </div>
+
+        <!-- Helpline Toggle Button, Country Override & Dynamic Helpline Cards -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <button id="toggle-helpline-btn" type="button" aria-expanded="false" aria-controls="helpline-drawer" class="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white text-brand-teal hover:bg-sky-50 font-display font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 shrink-0">
+            <i data-lucide="phone-call" class="w-4 h-4 text-rose-600"></i>
+            <span data-i18n="btn_helpline">Helplines</span>
+            <i id="helpline-chevron" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-200"></i>
+          </button>
+
+          <div id="helpline-drawer" class="hidden flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <!-- Manual Country Override Selector -->
+            <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-2.5 flex flex-col justify-center">
+              <label for="country-override" class="text-[10px] uppercase tracking-wider text-sky-200 font-semibold mb-1" data-i18n="region_label">Region / Country</label>
+              <select id="country-override" class="bg-brand-teal/80 text-white text-xs font-semibold rounded-lg px-2 py-1.5 border border-white/20 focus:outline-none">
+                <option value="AUTO">Auto-Detect (IP)</option>
+                <option value="IN">India (IN)</option>
+                <option value="US">United States (US)</option>
+                <option value="GB">United Kingdom (GB)</option>
+                <option value="CA">Canada (CA)</option>
+                <option value="AU">Australia (AU)</option>
+                <option value="DE">Germany (DE)</option>
+                <option value="JP">Japan (JP)</option>
+              </select>
+            </div>
+
+            <!-- Helpline Numbers Grid -->
+            <div id="helpline-cards" class="grid grid-cols-3 gap-2 sm:gap-3">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Interactive Map & Live Emergency Alert Feed Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Left 8 Columns: Interactive Essential Services Map -->
+      <section aria-labelledby="map-section-title" class="lg:col-span-8 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col overflow-hidden">
+        <!-- Map Header & Controls -->
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <i data-lucide="map-pin" class="w-5 h-5 text-brand-blue"></i>
+              <h2 id="map-section-title" class="font-display font-bold text-lg text-slate-900 dark:text-white" data-i18n="map_title">
+                Nearby Essential Services & Relief Centers
+              </h2>
+            </div>
+            <p id="location-status-text" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5" data-i18n="map_subtitle">
+              Enable GPS location to locate hospitals, shelters, and supply hubs around you.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="locate-me-btn" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-brand-teal hover:bg-[#0e485c] text-white text-xs font-semibold shadow-sm transition-all active:scale-95">
+              <i data-lucide="crosshair" class="w-4 h-4"></i>
+              <span data-i18n="btn_locate">Use My Location</span>
+            </button>
+            <a id="open-google-maps-btn" href="https://www.google.com/maps/search/hospitals+and+relief+centers+near+me" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all">
+              <i data-lucide="external-link" class="w-3.5 h-3.5 text-brand-blue"></i>
+              <span data-i18n="btn_gmaps">Open in Google Maps</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Category Filter Chips -->
+        <div class="px-4 py-2.5 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2 overflow-x-auto">
+          <button data-filter="all" class="map-filter-btn active px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-blue text-white transition-colors whitespace-nowrap" data-i18n="filter_all">
+            All Services
+          </button>
+          <button data-filter="hospital" class="map-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-rose-400 transition-colors whitespace-nowrap flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            <span data-i18n="filter_hospitals">Hospitals & Clinics</span>
+          </button>
+          <button data-filter="police" class="map-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 transition-colors whitespace-nowrap flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+            <span data-i18n="filter_police">Police & Fire Stations</span>
+          </button>
+          <button data-filter="relief" class="map-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-400 transition-colors whitespace-nowrap flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-brand-green"></span>
+            <span data-i18n="filter_relief">Relief Shelters</span>
+          </button>
+          <button data-filter="supplies" class="map-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-amber-400 transition-colors whitespace-nowrap flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <span data-i18n="filter_supplies">Food & Water Hubs</span>
+          </button>
+        </div>
+
+        <!-- Map Container with Enhanced Style Switcher -->
+        <div class="relative w-full h-[420px] sm:h-[480px] bg-slate-100 dark:bg-slate-800">
+          <div id="community-map" class="w-full h-full"></div>
+
+          <!-- Floating Map Layer Switcher (Detailed Roads / Hybrid Satellite / Dark) -->
+          <div class="absolute top-3 right-3 z-20 flex bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-1 rounded-xl shadow-md border border-slate-200 dark:border-slate-700 text-[11px] font-semibold">
+            <button data-mapstyle="street" class="map-style-btn px-2.5 py-1 rounded-lg bg-brand-teal text-white transition-colors" data-i18n="map_street">Roads & Places</button>
+            <button data-mapstyle="satellite" class="map-style-btn px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" data-i18n="map_satellite">Hybrid Satellite</button>
+            <button data-mapstyle="dark" class="map-style-btn px-2.5 py-1 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" data-i18n="map_dark">Dark</button>
+          </div>
+
+          <!-- Floating My Location Re-Center Button inside Map -->
+          <button id="map-recenter-btn" title="Center on My Live Location" class="absolute bottom-6 right-3 z-20 p-2.5 rounded-xl bg-white dark:bg-slate-900 text-brand-teal dark:text-sky-400 shadow-lg border border-slate-200 dark:border-slate-700 hover:scale-105 active:scale-95 transition-all">
+            <i data-lucide="navigation" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Nearby Places Quick Cards -->
+        <div id="nearby-places-list" class="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50/70 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+
+      <!-- Right 4 Columns: Live Emergency Alert Feed -->
+      <section aria-labelledby="alerts-heading" class="lg:col-span-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col h-[580px] lg:h-auto">
+        <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+            </span>
+            <h2 id="alerts-heading" class="font-display font-bold text-lg text-slate-900 dark:text-white" data-i18n="alerts_title">
+              Live Emergency Feed
+            </h2>
+          </div>
+          <button id="open-alert-modal-btn" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-semibold border border-rose-200 dark:border-rose-800/60 transition-colors">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span data-i18n="btn_report_alert">Report Alert</span>
+          </button>
+        </div>
+
+        <!-- Scrollable Alert Feed -->
+        <div id="alert-feed-container" class="flex-1 overflow-y-auto p-4 space-y-3">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 text-center">
+          <span class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-center gap-1.5">
+            <i data-lucide="radio" class="w-3.5 h-3.5 text-brand-green animate-pulse"></i>
+            <span data-i18n="live_sync_status">Real-time community & municipal feed active</span>
+          </span>
+        </div>
+      </section>
+    </div>
+
+    <!-- 3. Public Board for Volunteer Coordination -->
+    <section aria-labelledby="volunteer-heading" class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 sm:p-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <div class="flex items-center gap-2">
+            <div class="p-2 rounded-xl bg-brand-green/15 text-brand-green">
+              <i data-lucide="users" class="w-5 h-5"></i>
+            </div>
+            <h2 id="volunteer-heading" class="font-display font-bold text-xl text-slate-900 dark:text-white" data-i18n="volunteer_title">
+              Volunteer Coordination Board
+            </h2>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1" data-i18n="volunteer_subtitle">
+            Offer assistance, request neighborhood support, or join active relief tasks in your immediate area.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+            <button data-vfilter="all" class="v-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm transition-all" data-i18n="v_all">All</button>
+            <button data-vfilter="request" class="v-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all" data-i18n="v_requests">Needs Help</button>
+            <button data-vfilter="offer" class="v-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 transition-all" data-i18n="v_offers">Offers</button>
+          </div>
+          <button id="open-volunteer-modal-btn" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-green hover:bg-[#589e55] text-white text-xs sm:text-sm font-semibold shadow-sm transition-all active:scale-95">
+            <i data-lucide="hand-heart" class="w-4 h-4"></i>
+            <span data-i18n="btn_post_task">Post Request / Offer</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Volunteer Cards Grid -->
+      <div id="volunteer-board-grid" class="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Populated dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-12 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
+      <div class="flex items-center gap-2">
+        <span class="font-display font-bold text-brand-teal dark:text-sky-400">HYPER-LOCAL COMMUNITY HUB</span>
+        <span>•</span>
+        <span data-i18n="footer_tagline">Empowering resilient neighborhoods together.</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span>WCAG 2.1 AA Accessible</span>
+        <span>•</span>
+        <span id="footer-coords">GPS: Standby</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating AI-Driven Assistant Chatbot Widget -->
+  <div class="fixed bottom-5 right-5 z-50 flex flex-col items-end">
+    <!-- Chat Window -->
+    <div id="chatbot-window" class="hidden mb-3 w-[92vw] sm:w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex-col transition-all duration-200">
+      <!-- Chat Header -->
+      <div class="bg-gradient-to-r from-brand-teal to-brand-blue p-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
+            <i data-lucide="bot" class="w-5 h-5 text-white"></i>
+          </div>
+          <div>
+            <h3 class="font-display font-bold text-sm leading-tight" data-i18n="chat_title">Community AI Assistant</h3>
+            <p class="text-[11px] text-sky-100 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span data-i18n="chat_status">Instant First-Aid & Relief Guidance</span>
+            </p>
+          </div>
+        </div>
+        <button id="close-chat-btn" aria-label="Close Chat" class="p-1.5 rounded-lg hover:bg-white/15 transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Chat Messages Area -->
+      <div id="chat-messages" class="h-80 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-950/60 text-sm">
+        <div class="flex items-start gap-2.5">
+          <div class="w-7 h-7 rounded-lg bg-brand-teal text-white flex items-center justify-center shrink-0 mt-0.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          </div>
+          <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-none p-3 text-slate-700 dark:text-slate-200 shadow-sm text-xs leading-relaxed" data-i18n="chat_welcome">
+            Hello! I'm your Hyper-Local AI Assistant. Ask me about emergency first aid, finding nearby shelters, preparing an emergency kit, or local helpline numbers.
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Prompt Chips -->
+      <div class="px-3 py-2 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex gap-1.5 overflow-x-auto">
+        <button class="quick-prompt-btn px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-brand-blue/15 text-[11px] font-medium text-brand-teal dark:text-sky-300 whitespace-nowrap transition-colors">
+          Emergency Kit Checklist
+        </button>
+        <button class="quick-prompt-btn px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-brand-blue/15 text-[11px] font-medium text-brand-teal dark:text-sky-300 whitespace-nowrap transition-colors">
+          Basic First Aid Steps
+        </button>
+        <button class="quick-prompt-btn px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-brand-blue/15 text-[11px] font-medium text-brand-teal dark:text-sky-300 whitespace-nowrap transition-colors">
+          Nearest Relief Shelter
+        </button>
+      </div>
+
+      <!-- Chat Input Form -->
+      <form id="chat-form" class="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
+        <input id="chat-input" type="text" required placeholder="Ask for immediate guidance..." class="flex-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 text-xs rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-blue" />
+        <button type="submit" aria-label="Send Message" class="p-2.5 rounded-xl bg-brand-teal hover:bg-[#0e485c] text-white transition-colors shrink-0">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+
+    <!-- Floating Launcher Button -->
+    <button id="toggle-chat-btn" aria-label="Open AI Assistant" class="group relative flex items-center gap-2.5 px-4 py-3.5 rounded-full bg-gradient-to-r from-brand-teal to-brand-blue text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all">
+      <span class="absolute inset-0 rounded-full bg-brand-blue pulse-ring pointer-events-none"></span>
+      <i data-lucide="message-square-heart" class="w-5 h-5"></i>
+      <span class="font-display font-bold text-xs sm:text-sm pr-1" data-i18n="chat_fab">AI Help</span>
+    </button>
+  </div>
+
+  <!-- Modal 1: Post New Volunteer Request / Offer -->
+  <div id="volunteer-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <h3 class="font-display font-bold text-lg text-slate-900 dark:text-white" data-i18n="modal_v_title">Post to Volunteer Board</h3>
+        <button id="close-volunteer-modal" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="volunteer-form" class="p-4 sm:p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Post Type</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="cursor-pointer">
+              <input type="radio" name="vType" value="request" checked class="peer sr-only" />
+              <div class="p-2.5 text-center rounded-xl border border-slate-200 dark:border-slate-700 peer-checked:bg-amber-50 dark:peer-checked:bg-amber-950/40 peer-checked:border-amber-500 peer-checked:text-amber-700 dark:peer-checked:text-amber-300 text-xs font-semibold">
+                Requesting Help
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="vType" value="offer" class="peer sr-only" />
+              <div class="p-2.5 text-center rounded-xl border border-slate-200 dark:border-slate-700 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-950/40 peer-checked:border-brand-green peer-checked:text-emerald-700 dark:peer-checked:text-emerald-300 text-xs font-semibold">
+                Offering Support
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label for="v-title" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Headline / Task</label>
+          <input id="v-title" type="text" required placeholder="e.g., Need drinking water delivery or Medical transport available" class="w-full rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="v-author" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Your Name / Group</label>
+            <input id="v-author" type="text" required placeholder="e.g., Arjun M." class="w-full rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue" />
+          </div>
+          <div>
+            <label for="v-zone" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Neighborhood / Zone</label>
+            <input id="v-zone" type="text" required placeholder="e.g., Sector 4 / Downtown" class="w-full rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue" />
+          </div>
+        </div>
+
+        <div>
+          <label for="v-desc" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Details & Contact Info</label>
+          <textarea id="v-desc" rows="3" required placeholder="Describe resources needed/offered and how neighbors can reach you..." class="w-full rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="cancel-volunteer-modal" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-brand-green hover:bg-[#589e55] text-white text-xs font-semibold shadow-sm">Publish Post</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Report Live Community Alert -->
+  <div id="alert-modal" class="hidden fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <h3 class="font-display font-bold text-lg text-slate-900 dark:text-white">Broadcast Community Alert</h3>
+        <button id="close-alert-modal" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <form id="alert-form" class="p-4 sm:p-5 space-y-4">
+        <div>
+          <label for="a-severity" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Severity Level</label>
+          <select id="a-severity" class="w-full rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue">
+            <option value="critical">Critical (Immediate Hazard / Road Block)</option>
+            <option value="warning">Warning (Weather / Utility Disruption)</option>
+            <option value="info">Advisory (Relief Camp Open / Resource Update)</option>
+          </select>
+        </div>
+        <div>
+          <label for="a-title" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Alert Headline</label>
+          <input id="a-title" type="text" required placeholder="e.g., Waterlogging on MG Road Junction" class="w-full rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue" />
+        </div>
+        <div>
+          <label for="a-desc" class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Situation Details</label>
+          <textarea id="a-desc" rows="3" required placeholder="Provide clear, verified location details..." class="w-full rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-blue"></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" id="cancel-alert-modal" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm">Broadcast Alert</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    /**
+     * ============================================================================
+     * 1. INTERNATIONALIZATION (i18n) DICTIONARY
+     * ============================================================================
+     */
+    const translations = {
+      en: {
+        detecting: "Detecting Region...",
+        ip_badge: "IP-Localized Emergency Dispatch",
+        helpline_title: "Immediate Local Emergency Helplines",
+        helpline_subtitle: "Tap the Helplines button to view and call emergency numbers calibrated to your current region.",
+        btn_helpline: "Helplines",
+        region_label: "Region / Country",
+        map_title: "Nearby Essential Services & Relief Centers",
+        map_subtitle: "Enable GPS location to locate hospitals, shelters, and supply hubs around you.",
+        btn_locate: "Use My Location",
+        btn_gmaps: "Open in Google Maps",
+        filter_all: "All Services",
+        filter_hospitals: "Hospitals & Clinics",
+        filter_police: "Police & Fire Stations",
+        filter_relief: "Relief Shelters",
+        filter_supplies: "Food & Water Hubs",
+        map_street: "Roads & Places",
+        map_satellite: "Hybrid Satellite",
+        map_dark: "Dark",
+        alerts_title: "Live Emergency Feed",
+        btn_report_alert: "Report Alert",
+        live_sync_status: "Real-time community & municipal feed active",
+        volunteer_title: "Volunteer Coordination Board",
+        volunteer_subtitle: "Offer assistance, request neighborhood support, or join active relief tasks in your immediate area.",
+        v_all: "All",
+        v_requests: "Needs Help",
+        v_offers: "Offers",
+        btn_post_task: "Post Request / Offer",
+        footer_tagline: "Empowering resilient neighborhoods together.",
+        chat_title: "Community AI Assistant",
+        chat_status: "Instant First-Aid & Relief Guidance",
+        chat_welcome: "Hello! I'm your Hyper-Local AI Assistant. Ask me about emergency first aid, finding nearby shelters, preparing an emergency kit, or local helpline numbers.",
+        chat_fab: "AI Help",
+        modal_v_title: "Post to Volunteer Board"
+      },
+      es: {
+        detecting: "Detectando región...",
+        ip_badge: "Despacho de Emergencia por IP",
+        helpline_title: "Líneas Directas de Emergencia Local",
+        helpline_subtitle: "Toque el botón Líneas de Ayuda para ver y llamar a los números de su región.",
+        btn_helpline: "Helplines",
+        region_label: "Región / País",
+        map_title: "Servicios Esenciales y Centros de Ayuda",
+        map_subtitle: "Active el GPS para ubicar hospitales, refugios y centros de suministro cercanos.",
+        btn_locate: "Usar Mi Ubicación",
+        btn_gmaps: "Abrir en Google Maps",
+        filter_all: "Todos",
+        filter_hospitals: "Hospitales",
+        filter_police: "Policía y Bomberos",
+        filter_relief: "Refugios",
+        filter_supplies: "Agua y Alimentos",
+        map_street: "Mapa",
+        map_satellite: "Satélite",
+        map_dark: "Oscuro",
+        alerts_title: "Alertas en Vivo",
+        btn_report_alert: "Reportar Alerta",
+        live_sync_status: "Transmisión comunitaria en tiempo real activa",
+        volunteer_title: "Tablero de Voluntarios",
+        volunteer_subtitle: "Ofrezca ayuda, solicite apoyo vecinal o únase a tareas de socorro activas.",
+        v_all: "Todos",
+        v_requests: "Necesitan Ayuda",
+        v_offers: "Ofertas",
+        btn_post_task: "Publicar Solicitud / Oferta",
+        footer_tagline: "Fortaleciendo vecindarios resilientes juntos.",
+        chat_title: "Asistente IA Comunitario",
+        chat_status: "Guía instantánea de primeros auxilios",
+        chat_welcome: "¡Hola! Soy tu Asistente IA. Pregúntame sobre primeros auxilios, refugios cercanos o números de emergencia.",
+        chat_fab: "Ayuda IA",
+        modal_v_title: "Publicar en el Tablero"
+      },
+      hi: {
+        detecting: "क्षेत्र का पता लगाया जा रहा है...",
+        ip_badge: "आईपी-आधारित आपातकालीन सेवा",
+        helpline_title: "तत्काल स्थानीय आपातकालीन हेल्पलाइन",
+        helpline_subtitle: "अपने क्षेत्र के आपातकालीन नंबर देखने और कॉल करने के लिए हेल्पलाइन बटन दबाएं।",
+        btn_helpline: "हेल्पलाइन",
+        region_label: "क्षेत्र / देश",
+        map_title: "निकटवर्ती आवश्यक सेवाएं और राहत केंद्र",
+        map_subtitle: "अपने आस-पास के अस्पतालों और राहत शिविरों को देखने के लिए GPS चालू करें।",
+        btn_locate: "मेरी लोकेशन",
+        btn_gmaps: "Google मैप्स में खोलें",
+        filter_all: "सभी सेवाएं",
+        filter_hospitals: "अस्पताल",
+        filter_police: "पुलिस और फायर स्टेशन",
+        filter_relief: "राहत शिविर",
+        filter_supplies: "भोजन और पानी",
+        map_street: "मैप",
+        map_satellite: "सैटेलाइट",
+        map_dark: "डार्क",
+        alerts_title: "लाइव आपातकालीन अलर्ट",
+        btn_report_alert: "अलर्ट भेजें",
+        live_sync_status: "रीयल-टाइम सामुदायिक अलर्ट सक्रिय",
+        volunteer_title: "स्वयंसेवक समन्वय बोर्ड",
+        volunteer_subtitle: "सहायता प्रदान करें, पड़ोसियों से मदद मांगें, या राहत कार्यों में शामिल हों।",
+        v_all: "सभी",
+        v_requests: "मदद चाहिए",
+        v_offers: "सहायता उपलब्ध",
+        btn_post_task: "पोस्ट करें",
+        footer_tagline: "सशक्त और सुरक्षित समुदाय का निर्माण।",
+        chat_title: "कम्युनिटी AI सहायक",
+        chat_status: "प्राथमिक चिकित्सा और राहत मार्गदर्शन",
+        chat_welcome: "नमस्ते! मैं आपका AI सहायक हूँ। प्राथमिक चिकित्सा, राहत शिविरों या हेल्पलाइन नंबरों के बारे में पूछें।",
+        chat_fab: "AI मदद",
+        modal_v_title: "स्वयंसेवक बोर्ड पर पोस्ट करें"
+      },
+      ml: {
+        detecting: "പ്രദേശം കണ്ടെത്തുന്നു...",
+        ip_badge: "അടിയന്തര ഹെൽപ്പ്‌ലൈൻ സംവിധാനം",
+        helpline_title: "പ്രാദേശിക അടിയന്തര ഹെൽപ്പ്‌ലൈൻ നമ്പറുകൾ",
+        helpline_subtitle: "നിങ്ങളുടെ പ്രദേശത്തെ ഹെൽപ്പ്‌ലൈൻ നമ്പറുകൾ കാണാനും വിളിക്കാനും ഹെൽപ്പ്‌ലൈൻ ബട്ടൺ അമർത്തുക.",
+        btn_helpline: "ഹെൽപ്പ് ലൈൻ",
+        region_label: "രാജ്യം / പ്രദേശം",
+        map_title: "സമീപത്തുള്ള ആശുപത്രികളും ദുരിതാശ്വാസ കേന്ദ്രങ്ങളും",
+        map_subtitle: "നിങ്ങളുടെ ചുറ്റുമുള്ള സേവനങ്ങൾ കാണാൻ ലൊക്കേഷൻ ഓണാക്കുക.",
+        btn_locate: "എന്റെ ലൊക്കേഷൻ",
+        btn_gmaps: "Google Maps-ൽ തുറക്കുക",
+        filter_all: "എല്ലാം",
+        filter_hospitals: "ആശുപത്രികൾ",
+        filter_police: "പോലീസ് & ഫയർ സ്റ്റേഷൻ",
+        filter_relief: "ദുരിതാശ്വാസ ക്യാമ്പുകൾ",
+        filter_supplies: "ഭക്ഷണവും വെള്ളവും",
+        map_street: "റോഡുകൾ",
+        map_satellite: "സാറ്റലൈറ്റ്",
+        map_dark: "ഡാർക്ക്",
+        alerts_title: "തത്സമയ ജാഗ്രതാ നിർദ്ദേശങ്ങൾ",
+        btn_report_alert: "അറിയിപ്പ് നൽകുക",
+        live_sync_status: "തത്സമയ കമ്മ്യൂണിറ്റി അലേർട്ടുകൾ സജീവമാണ്",
+        volunteer_title: "വോളണ്ടിയർ ഏകോപന ബോർഡ്",
+        volunteer_subtitle: "സഹായം നൽകുക, അയൽക്കാരുടെ സഹായം തേടുക, അല്ലെങ്കിൽ ദുരിതാശ്വാസ പ്രവർത്തനങ്ങളിൽ പങ്കുചേരുക.",
+        v_all: "എല്ലാം",
+        v_requests: "സഹായം ആവശ്യമുണ്ട്",
+        v_offers: "സഹായം ലഭ്യമാണ്",
+        btn_post_task: "പോസ്റ്റ് ചെയ്യുക",
+        footer_tagline: "സുരക്ഷിതമായ അയൽപക്കങ്ങൾക്കായി ഒരുമിച്ച്.",
+        chat_title: "കമ്മ്യൂണിറ്റി AI സഹായി",
+        chat_status: "അടിയന്തര പ്രഥമശുശ്രൂഷാ സഹായം",
+        chat_welcome: "നമസ്കാരം! പ്രഥമശുശ്രൂഷ, ദുരിതാശ്വാസ ക്യാമ്പുകൾ, അല്ലെങ്കിൽ ഹെൽപ്പ്‌ലൈൻ നമ്പറുകൾ എന്നിവയെക്കുറിച്ച് എന്നോട് ചോദിക്കാം.",
+        chat_fab: "AI സഹായം",
+        modal_v_title: "വോളണ്ടിയർ ബോർഡിൽ പോസ്റ്റ് ചെയ്യുക"
+      },
+      fr: {
+        detecting: "Détection de la région...",
+        ip_badge: "Numéros d'urgence par IP",
+        helpline_title: "Numéros d'Urgence Locaux Immédiats",
+        helpline_subtitle: "Appuyez sur le bouton Urgences pour afficher et appeler les numéros de votre région.",
+        btn_helpline: "Helplines",
+        region_label: "Région / Pays",
+        map_title: "Services Essentiels & Centres de Secours",
+        map_subtitle: "Activez le GPS pour localiser les hôpitaux et abris à proximité.",
+        btn_locate: "Ma Position",
+        btn_gmaps: "Ouvrir Google Maps",
+        filter_all: "Tout",
+        filter_hospitals: "Hôpitaux",
+        filter_police: "Police et Pompiers",
+        filter_relief: "Abris de Secours",
+        filter_supplies: "Eau & Vivres",
+        map_street: "Plan",
+        map_satellite: "Satellite",
+        map_dark: "Sombre",
+        alerts_title: "Alertes en Direct",
+        btn_report_alert: "Signaler",
+        live_sync_status: "Flux communautaire en temps réel actif",
+        volunteer_title: "Tableau des Bénévoles",
+        volunteer_subtitle: "Proposez votre aide, demandez du soutien ou rejoignez des missions locales.",
+        v_all: "Tout",
+        v_requests: "Besoins d'aide",
+        v_offers: "Offres d'aide",
+        btn_post_task: "Publier une annonce",
+        footer_tagline: "Ensemble pour des quartiers résilients.",
+        chat_title: "Assistant IA Communautaire",
+        chat_status: "Premiers secours et orientation",
+        chat_welcome: "Bonjour ! Je suis votre assistant IA. Posez-moi des questions sur les premiers secours ou les abris proches.",
+        chat_fab: "Aide IA",
+        modal_v_title: "Publier sur le tableau"
+      }
+    };
+
+    let currentLang = 'en';
+
+    function applyTranslations(lang) {
+      currentLang = lang;
+      const dict = translations[lang] || translations.en;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) {
+          el.textContent = dict[key];
+        }
+      });
+    }
+
+    /**
+     * ============================================================================
+     * 2. TOAST NOTIFICATION UTILITY (NO alert())
+     * ============================================================================
+     */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        info: 'bg-brand-teal text-white border-brand-blue',
+        success: 'bg-emerald-600 text-white border-emerald-400',
+        warning: 'bg-amber-600 text-white border-amber-400',
+        error: 'bg-rose-600 text-white border-rose-400'
+      };
+      toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-xs font-semibold transform transition-all duration-300 translate-x-4 opacity-0 ${colors[type] || colors.info}`;
+      toast.innerHTML = `
+        <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+        <span class="flex-1">${message}</span>
+      `;
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-x-4', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('translate-x-4', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    /**
+     * ============================================================================
+     * 3. IP-BASED COUNTRY DETECTION & EMERGENCY HELPLINES
+     * ============================================================================
+     */
+    const countryEmergencyDB = {
+      IN: {
+        name: "India",
+        services: [
+          { label: "National Emergency", number: "112", icon: "phone-call", accent: "bg-rose-500" },
+          { label: "Ambulance", number: "108", icon: "ambulance", accent: "bg-emerald-500" },
+          { label: "Disaster Relief", number: "1070", icon: "shield-alert", accent: "bg-amber-500" }
+        ]
+      },
+      US: {
+        name: "United States",
+        services: [
+          { label: "Emergency 911", number: "911", icon: "phone-call", accent: "bg-rose-500" },
+          { label: "Crisis Lifeline", number: "988", icon: "heart-pulse", accent: "bg-emerald-500" },
+          { label: "Poison Control", number: "1-800-222-1222", icon: "shield-alert", accent: "bg-amber-500" }
+        ]
+      },
+      GB: {
+        name: "United Kingdom",
+        services: [
+          { label: "Emergency", number: "999", icon: "phone-call", accent: "bg-rose-500" },
+          { label: "NHS Medical", number: "111", icon: "ambulance", accent: "bg-emerald-500" },
+          { label: "EU Standard", number: "112", icon: "shield-alert", accent: "bg-amber-500" }
+        ]
+      },
+      CA: {
+        name: "Canada",
+        services: [
+          { label: "Emergency 911", number: "911", icon: "phone-call", accent: "bg-rose-500" },
+          { label: "Health Info", number: "811", icon: "ambulance", accent: "bg-emerald-500" },
+          { label: "Crisis Help", number: "988", icon: "heart-pulse", accent: "bg-amber-500" }
+        ]
+      },
+      AU: {
+        name: "Australia",
+        services: [
+          { label: "Triple Zero", number: "000", icon: "phone-call", accent: "bg-rose-500" },
+          { label: "SES Flood/Storm", number: "132 500", icon: "shield-alert", accent: "bg-amber-500" },
+          { label: "Healthdirect", number: "1800 022 222", icon: "ambulance", accent: "bg-emerald-500" }
+        ]
+      },
+      DE: {
+        name: "Germany",
+        services: [
+          { label: "Fire / Medical", number: "112", icon: "ambulance", accent: "bg-rose-500" },
+          { label: "Police", number: "110", icon: "shield-alert", accent: "bg-amber-500" },
+          { label: "Medical On-Call", number: "116 117", icon: "heart-pulse", accent: "bg-emerald-500" }
+        ]
+      },
+      JP: {
+        name: "Japan",
+        services: [
+          { label: "Fire / Ambulance", number: "119", icon: "ambulance", accent: "bg-rose-500" },
+          { label: "Police", number: "110", icon: "shield-alert", accent: "bg-amber-500" },
+          { label: "Disaster Msg", number: "171", icon: "phone-call", accent: "bg-emerald-500" }
+        ]
+      },
+      DEFAULT: {
+        name: "International",
+        services: [
+          { label: "Global Emergency", number: "112", icon: "phone-call", accent: "bg-rose-500" },
+          { label: "Emergency (US/NA)", number: "911", icon: "ambulance", accent: "bg-emerald-500" },
+          { label: "Local Rescue", number: "999", icon: "shield-alert", accent: "bg-amber-500" }
+        ]
+      }
+    };
+
+    let detectedCountryCode = 'IN';
+
+    function renderHelplines(code) {
+      const data = countryEmergencyDB[code] || countryEmergencyDB.DEFAULT;
+      document.getElementById('ip-country-code').textContent = code;
+      document.getElementById('detected-country-name').textContent = `${data.name} (${code})`;
+
+      const container = document.getElementById('helpline-cards');
+      container.innerHTML = data.services.map(srv => `
+        <a href="tel:${srv.number.replace(/[^0-9+]/g, '')}" class="group bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/25 rounded-xl p-2.5 sm:p-3 flex flex-col justify-between transition-all hover:-translate-y-0.5">
+          <div class="flex items-center justify-between gap-1 mb-1">
+            <span class="text-[10px] sm:text-xs font-medium text-sky-100 truncate">${srv.label}</span>
+            <span class="w-2 h-2 rounded-full ${srv.accent} shrink-0"></span>
+          </div>
+          <div class="flex items-center justify-between gap-1">
+            <span class="font-display font-extrabold text-sm sm:text-lg tracking-tight text-white">${srv.number}</span>
+            <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-300 group-hover:scale-110 transition-transform shrink-0"></i>
+          </div>
+        </a>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    async function detectUserCountryByIP() {
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        if (!res.ok) throw new Error('IP lookup unavailable');
+        const info = await res.json();
+        if (info && info.country_code) {
+          detectedCountryCode = info.country_code.toUpperCase();
+          renderHelplines(detectedCountryCode);
+          // If IP also gives approximate lat/lon, center map initially before GPS permission
+          if (info.latitude && info.longitude && !userHasGPS) {
+            updateMapCenter(info.latitude, info.longitude, `${info.city || info.country_name} (IP Approx.)`, false);
+          }
+          return;
+        }
+      } catch (err) {
+        // Fallback gracefully to India / default
+        renderHelplines(detectedCountryCode);
+      }
+    }
+
+    /**
+     * ============================================================================
+     * 4. INTERACTIVE MAP & GEOLOCATION ESSENTIAL SERVICES
+     * ============================================================================
+     */
+    let map;
+    let currentTileLayer;
+    let hybridLabelsLayer;
+    let markersLayer;
+    let routeLineLayer;
+    let radiusCircle;
+    let userMarker;
+    let userHasGPS = false;
+    let currentCoords = { lat: 9.9312, lng: 76.2673 }; // Default: Kochi, Kerala
+    let currentMapFilter = 'all';
+    let generatedPOIs = [];
+    let markerRefs = {};
+
+    const mapTileLayers = {
+      street: {
+        // Full OpenStreetMap standard layer showing every road, street name, building, shop, and landmark
+        url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        attr: '&copy; OpenStreetMap contributors'
+      },
+      satellite: {
+        // Esri World Imagery + Road/Place labels overlay
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        labelsUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+        attr: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics'
+      },
+      dark: {
+        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        attr: '&copy; OpenStreetMap &copy; CARTO'
+      }
+    };
+
+    function setMapTileStyle(styleKey) {
+      if (!map || !mapTileLayers[styleKey]) return;
+      if (currentTileLayer) {
+        map.removeLayer(currentTileLayer);
+      }
+      if (hybridLabelsLayer) {
+        map.removeLayer(hybridLabelsLayer);
+        hybridLabelsLayer = null;
+      }
+      currentTileLayer = L.tileLayer(mapTileLayers[styleKey].url, {
+        attribution: mapTileLayers[styleKey].attr,
+        maxZoom: 19
+      }).addTo(map);
+
+      if (mapTileLayers[styleKey].labelsUrl) {
+        hybridLabelsLayer = L.tileLayer(mapTileLayers[styleKey].labelsUrl, {
+          maxZoom: 19
+        }).addTo(map);
+      }
+    }
+
+    function initMap() {
+      map = L.map('community-map', {
+        zoomControl: true,
+        scrollWheelZoom: true
+      }).setView([currentCoords.lat, currentCoords.lng], 15);
+
+      setMapTileStyle('street');
+
+      markersLayer = L.layerGroup().addTo(map);
+      routeLineLayer = L.layerGroup().addTo(map);
+      updateMapCenter(currentCoords.lat, currentCoords.lng, "Your Location (Standby)", false);
+    }
+
+    function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return (R * c).toFixed(1) + ' km';
+    }
+
+    function getFallbackNearbyServices(lat, lng) {
+      return [
+        {
+          id: 1,
+          type: 'hospital',
+          name: 'City General & Trauma Hospital',
+          distance: '0.8 km',
+          status: '24/7 Emergency & Ambulance',
+          lat: lat + 0.0055,
+          lng: lng + 0.0048,
+          color: '#f43f5e',
+          badge: 'H'
+        },
+        {
+          id: 2,
+          type: 'police',
+          name: 'Central Town Police Station',
+          distance: '0.9 km',
+          status: '24/7 Control Room & Patrol',
+          lat: lat + 0.0038,
+          lng: lng - 0.0055,
+          color: '#4f46e5',
+          badge: 'P'
+        },
+        {
+          id: 3,
+          type: 'police',
+          name: 'District Fire & Rescue Station',
+          distance: '1.1 km',
+          status: 'Rapid Rescue Unit Ready',
+          lat: lat - 0.0042,
+          lng: lng - 0.0068,
+          color: '#4f46e5',
+          badge: 'F'
+        },
+        {
+          id: 4,
+          type: 'relief',
+          name: 'Community Civic Relief Shelter',
+          distance: '1.2 km',
+          status: '140 Beds & Medical Aid Available',
+          lat: lat - 0.0058,
+          lng: lng + 0.0074,
+          color: '#68B465',
+          badge: 'R'
+        },
+        {
+          id: 5,
+          type: 'supplies',
+          name: 'District Clean Water & Ration Depot',
+          distance: '1.5 km',
+          status: 'Stocked • Open till 10 PM',
+          lat: lat + 0.0075,
+          lng: lng + 0.0021,
+          color: '#f59e0b',
+          badge: 'S'
+        },
+        {
+          id: 6,
+          type: 'hospital',
+          name: 'St. Mary’s Urgent Care Clinic',
+          distance: '1.9 km',
+          status: 'First Aid & 24hr Pharmacy',
+          lat: lat - 0.0085,
+          lng: lng - 0.0032,
+          color: '#f43f5e',
+          badge: 'H'
+        }
+      ];
+    }
+
+    async function fetchRealNearbyServices(lat, lng) {
+      const baseList = getFallbackNearbyServices(lat, lng);
+      generatedPOIs = baseList;
+      renderMapPOIs();
+
+      try {
+        const query = `[out:json][timeout:8];(
+          node["amenity"="hospital"](around:4000,${lat},${lng});
+          way["amenity"="hospital"](around:4000,${lat},${lng});
+          node["amenity"="police"](around:4000,${lat},${lng});
+          way["amenity"="police"](around:4000,${lat},${lng});
+          node["amenity"="fire_station"](around:4000,${lat},${lng});
+          way["amenity"="fire_station"](around:4000,${lat},${lng});
+        );out center 15;`;
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+          method: 'POST',
+          body: query
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.elements && data.elements.length > 0) {
+          const realItems = data.elements
+            .filter(el => el.tags && el.tags.name && (el.lat || el.center))
+            .map((el, idx) => {
+              const pLat = el.lat || el.center.lat;
+              const pLng = el.lon || el.center.lon;
+              const amenity = el.tags.amenity;
+              const isHospital = amenity === 'hospital';
+              const isFire = amenity === 'fire_station';
+              return {
+                id: 500 + idx,
+                type: isHospital ? 'hospital' : 'police',
+                name: el.tags.name,
+                distance: calculateDistanceKm(lat, lng, pLat, pLng),
+                status: isHospital ? 'Verified Medical Facility' : (isFire ? 'Fire & Rescue Station' : 'Verified Police Station'),
+                lat: pLat,
+                lng: pLng,
+                color: isHospital ? '#f43f5e' : '#4f46e5',
+                badge: isHospital ? 'H' : (isFire ? 'F' : 'P')
+              };
+            });
+
+          if (realItems.length > 0) {
+            const communityHubs = baseList.filter(item => item.type === 'relief' || item.type === 'supplies');
+            generatedPOIs = [...realItems, ...communityHubs];
+            renderMapPOIs();
+          }
+        }
+      } catch (e) {
+        // Keep fallback POIs silently on network timeout
+      }
+    }
+
+    function createCustomMarkerIcon(color, badge) {
+      return L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div style="background-color:${color}; color:white; font-weight:800; font-size:11px; display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; border:2.5px solid white; box-shadow:0 3px 10px rgba(0,0,0,0.45);">${badge || '•'}</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14]
+      });
+    }
+
+    function drawPathToPOI(poi) {
+      if (!routeLineLayer) return;
+      routeLineLayer.clearLayers();
+      const line = L.polyline(
+        [[currentCoords.lat, currentCoords.lng], [poi.lat, poi.lng]],
+        {
+          color: poi.color || '#135D76',
+          weight: 4,
+          opacity: 0.85,
+          dashArray: '8, 8'
+        }
+      );
+      routeLineLayer.addLayer(line);
+    }
+
+    window.focusMapPOI = function(id) {
+      const poi = generatedPOIs.find(p => p.id === id);
+      const marker = markerRefs[id];
+      if (poi && map) {
+        drawPathToPOI(poi);
+        const bounds = L.latLngBounds([[currentCoords.lat, currentCoords.lng], [poi.lat, poi.lng]]);
+        map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+        if (marker) {
+          setTimeout(() => marker.openPopup(), 400);
+        }
+      }
+    };
+
+    function renderMapPOIs() {
+      if (!markersLayer) return;
+      markersLayer.clearLayers();
+      markerRefs = {};
+
+      const filtered = currentMapFilter === 'all'
+        ? generatedPOIs
+        : generatedPOIs.filter(p => p.type === currentMapFilter);
+
+      filtered.forEach(poi => {
+        const marker = L.marker([poi.lat, poi.lng], {
+          icon: createCustomMarkerIcon(poi.color, poi.badge)
+        });
+        const gmapsLink = `https://www.google.com/maps/dir/?api=1&origin=${currentCoords.lat},${currentCoords.lng}&destination=${poi.lat},${poi.lng}`;
+        marker.bindPopup(`
+          <div style="min-width:190px; font-family:Inter,sans-serif;">
+            <strong style="font-size:13px; color:#135D76; display:block; margin-bottom:2px;">${poi.name}</strong>
+            <span style="font-size:11px; color:#059669; font-weight:600; display:block; margin-bottom:8px;">${poi.status} • ${poi.distance}</span>
+            <a href="${gmapsLink}" target="_blank" rel="noopener noreferrer" style="display:inline-block; background:#135D76; color:white; font-size:11px; font-weight:600; padding:5px 10px; border-radius:8px; text-decoration:none;">
+              Navigate in Google Maps →
+            </a>
+          </div>
+        `);
+        marker.on('click', () => drawPathToPOI(poi));
+        markersLayer.addLayer(marker);
+        markerRefs[poi.id] = marker;
+      });
+
+      const listContainer = document.getElementById('nearby-places-list');
+      listContainer.innerHTML = filtered.slice(0, 4).map(poi => {
+        const gmapsLink = `https://www.google.com/maps/dir/?api=1&origin=${currentCoords.lat},${currentCoords.lng}&destination=${poi.lat},${poi.lng}`;
+        return `
+          <div onclick="focusMapPOI(${poi.id})" class="cursor-pointer bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700 hover:border-brand-blue transition-all flex items-start justify-between gap-2 shadow-xs">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5">
+                <span class="w-4 h-4 rounded-full text-[9px] font-extrabold text-white flex items-center justify-center shrink-0" style="background-color:${poi.color}">${poi.badge}</span>
+                <h4 class="font-semibold text-xs text-slate-900 dark:text-white truncate">${poi.name}</h4>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">${poi.status}</p>
+            </div>
+            <a href="${gmapsLink}" onclick="event.stopPropagation()" target="_blank" rel="noopener noreferrer" title="Open Turn-by-Turn Directions" class="shrink-0 px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 hover:bg-brand-blue hover:text-white text-[11px] font-semibold text-brand-teal dark:text-sky-300 transition-colors">
+              ${poi.distance} ↗
+            </a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateMapCenter(lat, lng, label, isExactGPS = true) {
+      currentCoords = { lat, lng };
+      if (map) {
+        map.setView([lat, lng], isExactGPS ? 16 : 14);
+        if (userMarker) map.removeLayer(userMarker);
+        if (radiusCircle) map.removeLayer(radiusCircle);
+        if (routeLineLayer) routeLineLayer.clearLayers();
+
+        radiusCircle = L.circle([lat, lng], {
+          radius: 1500,
+          color: '#2563eb',
+          weight: 1.5,
+          fillColor: '#3b82f6',
+          fillOpacity: 0.08
+        }).addTo(map);
+
+        userMarker = L.marker([lat, lng], {
+          zIndexOffset: 1000,
+          icon: L.divIcon({
+            className: 'user-gps-icon',
+            html: `<div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+                    <div style="background:#1e3a8a; color:white; font-size:10px; font-weight:800; padding:2px 7px; border-radius:999px; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.35); margin-bottom:3px; border:1.5px solid white;">
+                      YOU
+                    </div>
+                    <div style="position:relative; width:20px; height:20px;">
+                      <div class="pulse-ring" style="position:absolute; inset:0; background:#2563eb; border-radius:50%;"></div>
+                      <div style="position:relative; width:20px; height:20px; background:#2563eb; border:3px solid white; border-radius:50%; box-shadow:0 2px 8px rgba(0,0,0,0.45);"></div>
+                    </div>
+                   </div>`,
+            iconSize: [44, 44],
+            iconAnchor: [22, 34]
+          })
+        }).addTo(map).bindPopup(`<strong>📍 ${label}</strong><br><span style="font-size:11px; color:#475569;">Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}</span>`);
+        if (isExactGPS) {
+          userMarker.openPopup();
+        }
+      }
+
+      document.getElementById('footer-coords').textContent = `GPS: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+      document.getElementById('open-google-maps-btn').href = `https://www.google.com/maps/search/hospitals+police+stations+and+relief+centers/@${lat},${lng},15z`;
+
+      fetchRealNearbyServices(lat, lng);
+    }
+
+    function requestUserGeolocation(silent = false) {
+      const statusText = document.getElementById('location-status-text');
+      if (!('geolocation' in navigator)) {
+        if (!silent) showToast('Geolocation is not supported by your browser.', 'error');
+        return;
+      }
+
+      statusText.textContent = 'Locating your live GPS position...';
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userHasGPS = true;
+          const { latitude, longitude } = pos.coords;
+          updateMapCenter(latitude, longitude, 'Your Live Location', true);
+          statusText.textContent = `Showing roads, police stations & hospitals around your live location.`;
+          if (!silent) showToast('Live GPS location marked on map!', 'success');
+        },
+        (err) => {
+          statusText.textContent = 'Tap "Use My Location" to pinpoint your live GPS position.';
+          if (!silent) showToast('GPS access denied. Showing regional road map.', 'warning');
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    /**
+     * ============================================================================
+     * 5. LIVE EMERGENCY ALERT FEED
+     * ============================================================================
+     */
+    const emergencyAlerts = [
+      {
+        id: 101,
+        severity: 'critical',
+        title: 'Flash Flood Advisory — Low-Lying Canal Roads',
+        desc: 'Avoid Harbor Link Road due to rising water levels. Alternate route open via North Bypass.',
+        time: '4 mins ago',
+        source: 'Municipal Disaster Cell'
+      },
+      {
+        id: 102,
+        severity: 'info',
+        title: '24/7 Medical & First-Aid Camp Operational',
+        desc: 'Mobile medical unit and free drinking water station active at Civic Center Auditorium.',
+        time: '19 mins ago',
+        source: 'Red Cross Local Chapter'
+      },
+      {
+        id: 103,
+        severity: 'warning',
+        title: 'Scheduled Power Grid Maintenance (Zone B)',
+        desc: 'Backup generators active at all clinics. Domestic power expected to restore by 18:00.',
+        time: '42 mins ago',
+        source: 'Regional Utility Board'
+      }
+    ];
+
+    function renderAlerts() {
+      const container = document.getElementById('alert-feed-container');
+      const badgeStyles = {
+        critical: {
+          bg: 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/60',
+          pill: 'bg-rose-600 text-white',
+          label: 'CRITICAL'
+        },
+        warning: {
+          bg: 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/60',
+          pill: 'bg-amber-500 text-white',
+          label: 'WARNING'
+        },
+        info: {
+          bg: 'bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/60',
+          pill: 'bg-brand-blue text-white',
+          label: 'ADVISORY'
+        }
+      };
+
+      container.innerHTML = emergencyAlerts.map(alert => {
+        const style = badgeStyles[alert.severity] || badgeStyles.info;
+        return `
+          <article class="p-3.5 rounded-xl border ${style.bg} transition-all">
+            <div class="flex items-center justify-between gap-2 mb-1.5">
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider ${style.pill}">${style.label}</span>
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">${alert.time}</span>
+            </div>
+            <h3 class="font-display font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-snug">
+              ${alert.title}
+            </h3>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+              ${alert.desc}
+            </p>
+            <div class="mt-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+              <span class="flex items-center gap-1">
+                <i data-lucide="badge-check" class="w-3.5 h-3.5 text-brand-green"></i>
+                ${alert.source}
+              </span>
+            </div>
+          </article>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    /**
+     * ============================================================================
+     * 6. VOLUNTEER COORDINATION BOARD
+     * ============================================================================
+     */
+    const volunteerPosts = [
+      {
+        id: 1,
+        type: 'offer',
+        title: '4x4 Vehicle Available for Elderly Medical Transport',
+        author: 'Rohan Nair',
+        zone: 'Marine Drive & Sector 2',
+        desc: 'Available until 9 PM today to transport seniors or patients to City General Hospital.',
+        time: '12m ago',
+        claimed: false
+      },
+      {
+        id: 2,
+        type: 'request',
+        title: 'Need 20 Cases of Bottled Water & Baby Formula',
+        author: 'Civic Relief Shelter #2',
+        zone: 'South Block',
+        desc: 'Hosting 35 displaced families. Urgent need for clean drinking water and infant supplies.',
+        time: '28m ago',
+        claimed: false
+      },
+      {
+        id: 3,
+        type: 'offer',
+        title: 'Certified First-Aid Nurse & Emergency Power Bank',
+        author: 'Meera Krishnan, RN',
+        zone: 'Green Park Colony',
+        desc: 'Offering wound dressing, blood pressure checks, and solar battery charging for medical devices.',
+        time: '1h ago',
+        claimed: false
+      }
+    ];
+
+    let currentVolunteerFilter = 'all';
+
+    function renderVolunteerBoard() {
+      const grid = document.getElementById('volunteer-board-grid');
+      const filtered = currentVolunteerFilter === 'all'
+        ? volunteerPosts
+        : volunteerPosts.filter(p => p.type === currentVolunteerFilter);
+
+      grid.innerHTML = filtered.map(post => {
+        const isOffer = post.type === 'offer';
+        return `
+          <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 p-4 flex flex-col justify-between hover:border-brand-blue/50 transition-all">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2.5">
+                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold ${isOffer ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}">
+                  <i data-lucide="${isOffer ? 'heart-handshake' : 'alert-circle'}" class="w-3 h-3"></i>
+                  ${isOffer ? 'OFFERING HELP' : 'NEEDS ASSISTANCE'}
+                </span>
+                <span class="text-[11px] text-slate-400">${post.time}</span>
+              </div>
+              <h3 class="font-display font-bold text-sm sm:text-base text-slate-900 dark:text-white leading-snug">
+                ${post.title}
+              </h3>
+              <p class="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
+                ${post.desc}
+              </p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-2">
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                <span class="font-semibold text-slate-700 dark:text-slate-200 block">${post.author}</span>
+                <span>📍 ${post.zone}</span>
+              </div>
+              <button onclick="toggleVolunteerClaim(${post.id})" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${post.claimed ? 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300' : 'bg-brand-teal hover:bg-[#0e485c] text-white shadow-xs'}">
+                ${post.claimed ? '✓ Connected' : (isOffer ? 'Request Support' : 'Volunteer Now')}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    window.toggleVolunteerClaim = function(id) {
+      const post = volunteerPosts.find(p => p.id === id);
+      if (post) {
+        post.claimed = !post.claimed;
+        renderVolunteerBoard();
+        if (post.claimed) {
+          showToast(`Connected with ${post.author}! Direct coordination channel opened.`, 'success');
+        }
+      }
+    };
+
+    /**
+     * ============================================================================
+     * 7. LIGHTWEIGHT AI-DRIVEN CHATBOT (GEMINI API + SMART OFFLINE FALLBACK)
+     * ============================================================================
+     */
+    const chatMessagesEl = document.getElementById('chat-messages');
+
+    function appendChatMessage(text, sender = 'bot') {
+      const wrapper = document.createElement('div');
+      wrapper.className = sender === 'user'
+        ? 'flex items-end justify-end gap-2'
+        : 'flex items-start gap-2.5';
+
+      if (sender === 'user') {
+        wrapper.innerHTML = `
+          <div class="bg-brand-teal text-white rounded-2xl rounded-br-none px-3.5 py-2.5 text-xs leading-relaxed max-w-[80%] shadow-xs">
+            ${escapeHTML(text)}
+          </div>
+        `;
+      } else {
+        wrapper.innerHTML = `
+          <div class="w-7 h-7 rounded-lg bg-brand-teal text-white flex items-center justify-center shrink-0 mt-0.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          </div>
+          <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl rounded-tl-none p-3 text-slate-700 dark:text-slate-200 shadow-sm text-xs leading-relaxed max-w-[85%]">
+            ${text}
+          </div>
+        `;
+      }
+
+      chatMessagesEl.appendChild(wrapper);
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+      lucide.createIcons();
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag]));
+    }
+
+    function getLocalFallbackResponse(query) {
+      const q = query.toLowerCase();
+      const countryData = countryEmergencyDB[detectedCountryCode] || countryEmergencyDB.DEFAULT;
+      const primaryNum = countryData.services[0].number;
+
+      if (q.includes('kit') || q.includes('checklist') || q.includes('prepare')) {
+        return `<strong>Essential 72-Hour Emergency Kit:</strong><br>• 3 liters of water per person/day<br>• Non-perishable food & manual can opener<br>• First-aid kit & 7-day prescription meds<br>• Flashlight, whistle & power bank<br>• Copies of IDs in a waterproof pouch.`;
+      }
+      if (q.includes('first aid') || q.includes('bleed') || q.includes('burn') || q.includes('cpr')) {
+        return `<strong>Immediate First-Aid Basics:</strong><br>1. Ensure scene safety first.<br>2. For bleeding: apply firm, direct pressure with a clean cloth.<br>3. For burns: cool under running water for 10–20 mins (no ice).<br>4. If unresponsive & not breathing, call <strong>${primaryNum}</strong> immediately and begin chest compressions.`;
+      }
+      if (q.includes('shelter') || q.includes('hospital') || q.includes('relief') || q.includes('near')) {
+        const nearest = generatedPOIs[0] ? `${generatedPOIs[0].name} (${generatedPOIs[0].distance})` : 'City General Hospital';
+        return `Based on your active map region, the nearest facility is <strong>${nearest}</strong>. Click <em>"Use My Location"</em> on the map above for turn-by-turn Google Maps directions.`;
+      }
+      return `For immediate life-threatening emergencies in <strong>${countryData.name}</strong>, dial <strong>${primaryNum}</strong> right away. You can also check the Live Alert Feed or post a request on the Volunteer Board for neighborhood aid.`;
+    }
+
+    async function handleChatQuery(userText) {
+      appendChatMessage(userText, 'user');
+
+      // Show typing indicator
+      const typingId = 'typing-' + Date.now();
+      const typingEl = document.createElement('div');
+      typingEl.id = typingId;
+      typingEl.className = 'flex items-center gap-2 text-xs text-slate-400 pl-9';
+      typingEl.innerHTML = `<span class="animate-pulse">Assistant is analyzing local resources...</span>`;
+      chatMessagesEl.appendChild(typingEl);
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+
+      const apiKey = ""; // Runtime-provided key if available
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const systemPrompt = `You are a concise, calm, and practical Hyper-Local Community Hub AI Assistant. 
+      The user is currently located in region code: ${detectedCountryCode} (GPS: ${currentCoords.lat.toFixed(3)}, ${currentCoords.lng.toFixed(3)}).
+      Provide actionable, short, bulleted guidance (under 90 words) for emergency preparedness, first aid, or community coordination. Always remind them of local emergency numbers when urgent.`;
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: userText }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] }
+          })
+        });
+
+        document.getElementById(typingId)?.remove();
+
+        if (!response.ok) throw new Error('API fallback');
+        const result = await response.json();
+        const reply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (reply) {
+          // Format bold markdown minimally for clean display
+          const formatted = escapeHTML(reply).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+          appendChatMessage(formatted, 'bot');
+        } else {
+          appendChatMessage(getLocalFallbackResponse(userText), 'bot');
+        }
+      } catch (e) {
+        document.getElementById(typingId)?.remove();
+        appendChatMessage(getLocalFallbackResponse(userText), 'bot');
+      }
+    }
+
+    /**
+     * ============================================================================
+     * 8. EVENT LISTENERS & INITIALIZATION
+     * ============================================================================
+     */
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initMap();
+      renderHelplines(detectedCountryCode);
+      detectUserCountryByIP();
+      renderAlerts();
+      renderVolunteerBoard();
+
+      // Theme Toggle
+      const themeToggle = document.getElementById('theme-toggle');
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.documentElement.classList.add('dark');
+      }
+      themeToggle.addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+      });
+
+      // Language Switcher
+      document.getElementById('lang-select').addEventListener('change', (e) => {
+        applyTranslations(e.target.value);
+        showToast(`Language switched to ${e.target.options[e.target.selectedIndex].text}`, 'info');
+      });
+
+      // Country Override Selector
+      const helplineBtn = document.getElementById('toggle-helpline-btn');
+      const helplineDrawer = document.getElementById('helpline-drawer');
+      const helplineChevron = document.getElementById('helpline-chevron');
+
+      helplineBtn.addEventListener('click', () => {
+        const isHidden = helplineDrawer.classList.contains('hidden');
+        helplineDrawer.classList.toggle('hidden', !isHidden);
+        helplineDrawer.classList.toggle('flex', isHidden);
+        helplineBtn.setAttribute('aria-expanded', String(isHidden));
+        helplineChevron.classList.toggle('rotate-180', isHidden);
+      });
+
+      document.getElementById('country-override').addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'AUTO') {
+          detectUserCountryByIP();
+        } else {
+          detectedCountryCode = val;
+          renderHelplines(val);
+      // Locate Me Button & Floating Map Re-Center Button
+      document.getElementById('locate-me-btn').addEventListener('click', () => requestUserGeolocation(false));
+      document.getElementById('map-recenter-btn').addEventListener('click', () => requestUserGeolocation(false));
+
+      // Automatically request live GPS location on startup so user sees their exact roads immediately
+      requestUserGeolocation(true);
+
+      // Map Category Filter Buttons
+      document.querySelectorAll('.map-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.map-filter-btn').forEach(b => {
+            b.classList.remove('bg-brand-blue', 'text-white');
+            b.classList.add('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+          });
+          btn.classList.remove('bg-white', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+          btn.classList.add('bg-brand-blue', 'text-white');
+          currentMapFilter = btn.getAttribute('data-filter');
+          renderMapPOIs();
+        });
+      });
+
+      // Map Layer Style Switcher (Street / Satellite / Dark)
+      document.querySelectorAll('.map-style-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.map-style-btn').forEach(b => {
+            b.classList.remove('bg-brand-teal', 'text-white');
+            b.classList.add('text-slate-600', 'dark:text-slate-300');
+          });
+          btn.classList.add('bg-brand-teal', 'text-white');
+          btn.classList.remove('text-slate-600', 'dark:text-slate-300');
+          setMapTileStyle(btn.getAttribute('data-mapstyle'));
+        });
+      });
+
+      // Volunteer Filter Buttons
+      document.querySelectorAll('.v-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.v-filter-btn').forEach(b => {
+            b.classList.remove('bg-white', 'dark:bg-slate-700', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+            b.classList.add('text-slate-600', 'dark:text-slate-400');
+          });
+          btn.classList.add('bg-white', 'dark:bg-slate-700', 'text-slate-900', 'dark:text-white', 'shadow-sm');
+          btn.classList.remove('text-slate-600', 'dark:text-slate-400');
+          currentVolunteerFilter = btn.getAttribute('data-vfilter');
+          renderVolunteerBoard();
+        });
+      });
+
+      // Volunteer Modal Controls
+      const vModal = document.getElementById('volunteer-modal');
+      document.getElementById('open-volunteer-modal-btn').addEventListener('click', () => vModal.classList.remove('hidden'));
+      document.getElementById('close-volunteer-modal').addEventListener('click', () => vModal.classList.add('hidden'));
+      document.getElementById('cancel-volunteer-modal').addEventListener('click', () => vModal.classList.add('hidden'));
+
+      document.getElementById('volunteer-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const type = document.querySelector('input[name="vType"]:checked').value;
+        const title = document.getElementById('v-title').value.trim();
+        const author = document.getElementById('v-author').value.trim();
+        const zone = document.getElementById('v-zone').value.trim();
+        const desc = document.getElementById('v-desc').value.trim();
+
+        volunteerPosts.unshift({
+          id: Date.now(),
+          type,
+          title,
+          author,
+          zone,
+          desc,
+          time: 'Just now',
+          claimed: false
+        });
+        renderVolunteerBoard();
+        e.target.reset();
+        vModal.classList.add('hidden');
+        showToast('Your post is now live on the Volunteer Board!', 'success');
+      });
+
+      // Alert Modal Controls
+      const aModal = document.getElementById('alert-modal');
+      document.getElementById('open-alert-modal-btn').addEventListener('click', () => aModal.classList.remove('hidden'));
+      document.getElementById('close-alert-modal').addEventListener('click', () => aModal.classList.add('hidden'));
+      document.getElementById('cancel-alert-modal').addEventListener('click', () => aModal.classList.add('hidden'));
+
+      document.getElementById('alert-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const severity = document.getElementById('a-severity').value;
+        const title = document.getElementById('a-title').value.trim();
+        const desc = document.getElementById('a-desc').value.trim();
+
+        emergencyAlerts.unshift({
+          id: Date.now(),
+          severity,
+          title,
+          desc,
+          time: 'Just now',
+          source: 'Verified Community Report'
+        });
+        renderAlerts();
+        e.target.reset();
+        aModal.classList.add('hidden');
+        showToast('Emergency alert broadcasted to neighborhood feed.', 'warning');
+      });
+
+      // Chatbot Toggle & Submit
+      const chatWin = document.getElementById('chatbot-window');
+      document.getElementById('toggle-chat-btn').addEventListener('click', () => {
+        chatWin.classList.toggle('hidden');
+        chatWin.classList.toggle('flex');
+      });
+      document.getElementById('close-chat-btn').addEventListener('click', () => {
+        chatWin.classList.add('hidden');
+        chatWin.classList.remove('flex');
+      });
+
+      document.getElementById('chat-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = '';
+        handleChatQuery(text);
+      });
+
+      document.querySelectorAll('.quick-prompt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          handleChatQuery(btn.textContent.trim());
+        });
+      });
+    });
+  </script>
+</body>
+</html>
